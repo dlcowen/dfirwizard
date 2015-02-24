@@ -4,6 +4,7 @@
 
 # (C) COPYRIGHT © Preston Landers 2010
 # Released under the same license as Python 2.6.5
+# modified for Part 5 of the series 
 
 
 import sys, os, traceback, types
