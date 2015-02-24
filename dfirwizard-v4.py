@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Sample program or step 3 in becoming a DFIR Wizard!
+# Sample program or step 4 in becoming a DFIR Wizard!
 # No license as this code is simple and free!
 import sys
 import pytsk3
