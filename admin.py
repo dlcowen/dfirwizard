@@ -72,18 +72,5 @@ def runAsAdmin(cmdLine=None, wait=True):
 
     return rc
 
-def test():
-    rc = 0
-    if not isUserAdmin():
-        print "You're not an admin.", os.getpid(), "params: ", sys.argv
-        #rc = runAsAdmin(["c:\\Windows\\notepad.exe"])
-        rc = runAsAdmin()
-    else:
-        print "You are an admin!", os.getpid(), "params: ", sys.argv
-        rc = 0
-    x = raw_input('Press Enter to exit.')
-    return rc
-
-
 if __name__ == "__main__":
     sys.exit(test())
