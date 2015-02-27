@@ -7,6 +7,7 @@ import datetime
 import pyewf
 import argparse
 import hashlib
+import csv
         
 class ewf_Img_Info(pytsk3.Img_Info):
   def __init__(self, ewf_handle):
@@ -26,7 +27,6 @@ class ewf_Img_Info(pytsk3.Img_Info):
 
 def directoryRecurse(directoryObject, parentPath):
   for entryObject in directoryObject:
-      print '/'.join(parentPath)+'/'+entryObject.info.name.name
       if entryObject.info.name.name in [".", ".."]:
         continue
       try:
@@ -35,6 +35,14 @@ def directoryRecurse(directoryObject, parentPath):
         directoryRecurse(sub_directory,parentPath)
         parentPath.pop(-1)
       except IOError:
+        if entryObject.info.meta.size == 0:
+          continue
+        filedata = entryObject.read_random(0,entryObject.info.meta.size)
+        md5hash = hashlib.md5()
+        md5hash.update(filedata)
+        sha1hash = hashlib.sha1()
+        sha1hash.update(filedata)
+        wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),md5hash.hexdigest(),sha1hash.hexdigest()])
         pass
       
   
@@ -59,9 +67,21 @@ argparser.add_argument(
         required=False,
         help='Path to recurse from, defaults to /'
     )
+argparser.add_argument(
+        '-o', '--output',
+        dest='output',
+        action="store",
+        type=str,
+        default='inventory.csv',
+        required=False,
+        help='File to write the hashes to'
+    )
 args = argparser.parse_args()
 filenames = pyewf.glob(args.imagefile)
 dirPath = args.path
+outfile = open(args.output,'w')
+outfile.write('"Inode","Full Path","Creation Time","Size","MD5 Hash","SHA1 Hash"\n')
+wr = csv.writer(outfile, quoting=csv.QUOTE_ALL)
 ewf_handle = pyewf.handle()
 ewf_handle.open(filenames)
 imagehandle = ewf_Img_Info(ewf_handle)
