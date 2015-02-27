@@ -25,19 +25,19 @@ class ewf_Img_Info(pytsk3.Img_Info):
     return self._ewf_handle.get_media_size()
 
 def directoryRecurse(directoryObject, parentPath):
-  parentPath.append(directoryObject.info.fs_file.name.name)
   for entryObject in directoryObject:
-      print str(parentPath)+entryObject.info.name.name
+      print '/'.join(parentPath)+'/'+entryObject.info.name.name
       if entryObject.info.name.name in [".", ".."]:
         continue
       try:
         sub_directory = entryObject.as_directory()
-        print sub_directory
-        print sub_directory.info.fs_file.name.name
+        parentPath.append(entryObject.info.name.name)
         directoryRecurse(sub_directory,parentPath)
+        parentPath.pop(-1)
       except IOError:
         pass
-  parentPath.pop(-1)
+      
+  
   
         
 argparser = argparse.ArgumentParser(description='Hash all files recursively from a forensic image')
