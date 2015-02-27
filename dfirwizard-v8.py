@@ -36,6 +36,7 @@ def directoryRecurse(directoryObject, parentPath):
         parentPath.pop(-1)
       except IOError:
         if entryObject.info.meta.size == 0:
+          wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),"d41d8cd98f00b204e9800998ecf8427e","da39a3ee5e6b4b0d3255bfef95601890afd80709"])
           continue
         filedata = entryObject.read_random(0,entryObject.info.meta.size)
         md5hash = hashlib.md5()
