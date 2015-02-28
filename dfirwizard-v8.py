@@ -29,23 +29,41 @@ def directoryRecurse(directoryObject, parentPath):
   for entryObject in directoryObject:
       if entryObject.info.name.name in [".", ".."]:
         continue
+
       try:
-        sub_directory = entryObject.as_directory()
-        parentPath.append(entryObject.info.name.name)
-        directoryRecurse(sub_directory,parentPath)
-        parentPath.pop(-1)
-      except IOError:
-        if entryObject.info.meta.size == 0:
-          wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),"d41d8cd98f00b204e9800998ecf8427e","da39a3ee5e6b4b0d3255bfef95601890afd80709"])
+        f_type = entryObject.info.meta.type
+      except:
+          print "Cannot retrieve type of",entryObject.info.name.name
           continue
-        filedata = entryObject.read_random(0,entryObject.info.meta.size)
-        md5hash = hashlib.md5()
-        md5hash.update(filedata)
-        sha1hash = hashlib.sha1()
-        sha1hash.update(filedata)
-        wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),md5hash.hexdigest(),sha1hash.hexdigest()])
-        pass
-      
+        
+      try:
+
+        filepath = '/%s/%s' % ('/'.join(parentPath),entryObject.info.name.name)
+
+        if f_type == pytsk3.TSK_FS_META_TYPE_DIR:
+            sub_directory = entryObject.as_directory()
+            parentPath.append(entryObject.info.name.name)
+            directoryRecurse(sub_directory,parentPath)
+            parentPath.pop(-1)
+            print "Directory: %s" % filepath
+            
+
+        elif f_type == pytsk3.TSK_FS_META_TYPE_REG and entryObject.info.meta.size != 0:
+        
+            filedata = entryObject.read_random(0,entryObject.info.meta.size)
+            md5hash = hashlib.md5()
+            md5hash.update(filedata)
+            sha1hash = hashlib.sha1()
+            sha1hash.update(filedata)
+            wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),md5hash.hexdigest(),sha1hash.hexdigest()])
+
+        elif f_type == pytsk3.TSK_FS_META_TYPE_REG and entryObject.info.meta.size == 0:
+
+            wr.writerow([int(entryObject.info.meta.addr),'/'.join(parentPath)+entryObject.info.name.name,datetime.datetime.fromtimestamp(entryObject.info.meta.crtime).strftime('%Y-%m-%d %H:%M:%S'),int(entryObject.info.meta.size),"d41d8cd98f00b204e9800998ecf8427e","da39a3ee5e6b4b0d3255bfef95601890afd80709"])
+          
+      except IOError as e:
+        print e
+        continue
   
   
         
@@ -93,7 +111,7 @@ for partition in partitionTable:
   if 'NTFS' in partition.desc:
     filesystemObject = pytsk3.FS_Info(imagehandle, offset=(partition.start*512))
     directoryObject = filesystemObject.open_dir(path=dirPath)
-    print directoryObject.info.fs_file.name.name
+    print "Directory:",dirPath
     directoryRecurse(directoryObject,[])
     
   
