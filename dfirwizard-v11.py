@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # Sample program or step 8 in becoming a DFIR Wizard!
 # No license as this code is simple and free!
+# DFIR Wizard v11
+# Go here to learn more http://www.hecfblog.com/2015/05/automating-dfir-how-to-series-on.html
 import sys
 import pytsk3
 import datetime
