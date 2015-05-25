@@ -1,6 +1,7 @@
 #!/usr/bin/python
-# Sample program or step 8 in becoming a DFIR Wizard!
+# Sample program or step 12 in becoming a DFIR Wizard!
 # No license as this code is simple and free!
+# Goes with blog post http://www.hecfblog.com/2015/05/automating-dfir-how-to-series-on_24.html
 import sys
 import pytsk3
 import datetime
@@ -38,22 +39,21 @@ def directoryRecurse(directoryObject, parentPath):
         f_type = entryObject.info.name.type
         size = entryObject.info.meta.size
       except Exception as error:
-          print "Cannot retrieve type or size of",entryObject.info.name.name
-          print error.message
+          #print "Cannot retrieve type or size of",entryObject.info.name.name
+          #print error.message
           continue
         
       try:
-
         filepath = '/%s/%s' % ('/'.join(parentPath),entryObject.info.name.name)
         outputPath ='./%s/' % ('/'.join(parentPath))
 
         if f_type == pytsk3.TSK_FS_NAME_TYPE_DIR:
             sub_directory = entryObject.as_directory()
-            print "Entering Directory: %s" % filepath
+            #print "Entering Directory: %s" % filepath
             parentPath.append(entryObject.info.name.name)
             directoryRecurse(sub_directory,parentPath)
             parentPath.pop(-1)
-            print "Leaving Directory: %s" % filepath
+            #print "Leaving Directory: %s" % filepath
             
 
 
@@ -186,9 +186,13 @@ for partition in partitionTable:
         img = vss.VShadowImgInfo(store)
         vssfilesystemObject = pytsk3.FS_Info(img)
         vssdirectoryObject = vssfilesystemObject.open_dir(path=dirPath)
-        print "Directory:",dirPath
-        directoryRecurse(vssdirectoryObject,[])
+        print "Directory:","vss",str(vstore),dirPath
+        directoryRecurse(vssdirectoryObject,['vss',str(vstore)])
         vstore = vstore + 1
+      #Capture the live volume
+      directoryObject = filesystemObject.open_dir(path=dirPath)
+      print "Directory:",dirPath
+      directoryRecurse(directoryObject,[])
   else:
       directoryObject = filesystemObject.open_dir(path=dirPath)
       print "Directory:",dirPath
