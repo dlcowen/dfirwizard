@@ -14,6 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#This file was copied from https://code.google.com/p/plaso/source/browse/plaso/pvfs/vss.py
+
 """This file contains a simple library to read files stored in VSS."""
 import logging
 import os
