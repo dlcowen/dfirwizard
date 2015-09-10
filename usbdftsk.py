@@ -4,6 +4,7 @@
 # UsbDeviceForensics .Net WinForms GUI application.
 #
 # Copyright 2015 Mark Woan <markwoan[@]gmail.com>
+# Updated by David Cowen, who likes Mark Woan
 
 import argparse
 import os
@@ -14,7 +15,7 @@ from enum import Enum
 from datetime import datetime, timedelta
 import re
 import csv
-import pytsk
+import pytsk3
 
 # Enums #######################################################################
 
@@ -90,76 +91,82 @@ class UsbDevice():
 
 # System Hive Methods #########################################################
 
-def process(registry_path, output, format):
+def process(image_path, output, format):
     """Processing entry point"""
+    imagehandle = pytsk3.Img_Info(url=image_path)
+    partitionTable = pytsk3.Volume_Info(imagehandle)
+    for partition in partitionTable:
+      print partition.addr, partition.desc, "%ss(%s)" % (partition.start, partition.start * 512), partition.len
+      try:
+            filesystemObject = pytsk3.FS_Info(imagehandle, offset=(partition.start*512))
+      except:
+              print "Partition has no supported file system"
+              continue
+      print "File System Type Detected .",filesystemObject.info.ftype,"."
+      if (str(filesystemObject.info.ftype) == "TSK_FS_TYPE_NTFS_DETECT"):
+        print "NTFS DETECTED"
+        # Process the hives in a specific order so that the
+        # data can be correctly matched between the hives
+        try:
+            filesystemObject.open("/Windows")
+        except:
+            print "No Windows directory, skipping"
+            continue
+        process_registry_hive(filesystemObject, Registry.HiveType.SYSTEM)
+        process_registry_hive(filesystemObject, Registry.HiveType.SOFTWARE)
+        process_registry_hive(filesystemObject, Registry.HiveType.NTUSER)
+        fileobject = filesystemObject.open("/Windows/Inf/SetupApi.dev.log")
+        filedata = fileobject.read_random(0,fileobject.info.meta.size)
+        process_log_file(filedata)
+    
+        output_data_to_console()
+    
+        if output is None:
+            return
+    
+        if format == "csv":
+            output_data_to_file_csv(output)
+        else:
+            output_data_to_file_text(output)
 
-    # Process the hives in a specific order so that the
-    # data can be correctly matched between the hives
-    process_registry_hive(registry_path, Registry.HiveType.SYSTEM)
-    process_registry_hive(registry_path, Registry.HiveType.SOFTWARE)
-    process_registry_hive(registry_path, Registry.HiveType.NTUSER)
-
-    # Loop through the files looking for the *.log files
-    for root, dirs, files in os.walk(registry_path):
-        for f in files:
-            try:
-                file_name, ext = os.path.splitext(f)
-                if ext.lower() != ".log":
-                    continue
-
-                process_log_file(os.path.join(root, f))
-
-            except Exception as err:
-                traceback.print_exc(file=sys.stdout)
-                traceback.print_stack()
-                print(err.args)
-                print(err.message)
-
-    output_data_to_console()
-
-    if output is None:
-        return
-
-    if format == "csv":
-        output_data_to_file_csv(output)
-    else:
-        output_data_to_file_text(output)
-
-def process_registry_hive(registry_path, hive_type):
+def process_registry_hive(filesystemObject, hive_type):
     """Generic method used to process a single registry hive type"""
-    for root, dirs, files in os.walk(registry_path):
-        for f in files:
-            try:
-                registry = load_file(os.path.join(root, f))
-                if registry is None:
-                    continue
+    
 
-                if registry.hive_type() == Registry.HiveType.SYSTEM and hive_type == Registry.HiveType.SYSTEM:
-                    print('Hive name: ' + registry.hive_name())
-                    print('Hive type: ' + registry.hive_type().value)
-                    process_usb_stor(registry)
-                    process_usb_stor_properties(registry)
-                    process_usb(registry)
-                    process_mounted_devices(registry)
-                    process_device_classes(registry)
+    if hive_type == Registry.HiveType.SYSTEM:
+        fileobject = filesystemObject.open("/Windows/System32/Config/SYSTEM")
+        filedata = fileobject.read_random(0,fileobject.info.meta.size)
+        print('Loading file: SYSTEM ')
+        outfile = open('SYSTEM', 'w')
+        outfile.write(filedata)
+        registry = Registry.Registry("SYSTEM")
+        print('Hive name: ' + registry.hive_name())
+        print('Hive type: ' + registry.hive_type().value)
+        process_usb_stor(registry)
+        process_usb_stor_properties(registry)
+        process_usb(registry)
+        process_mounted_devices(registry)
+        process_device_classes(registry)
 
-                if registry.hive_type() == Registry.HiveType.SOFTWARE and hive_type == Registry.HiveType.SOFTWARE:
-                    print('Hive name: ' + registry.hive_name())
-                    print('Hive type: ' + registry.hive_type().value)
-                    get_os_version(registry)
-                    process_windows_portable_devices(registry)
-                    process_emd_mgmt(registry)
+    if hive_type == Registry.HiveType.SOFTWARE:
+        fileobject = filesystemObject.open("/Windows/System32/Config/SOFTWARE")
+        filedata = fileobject.read_random(0,fileobject.info.meta.size)
+        print('Loading file: SOFTWARE')
+        registry = Registry.Registry(filedata)
+        print('Hive name: ' + registry.hive_name())
+        print('Hive type: ' + registry.hive_type().value)
+        get_os_version(registry)
+        process_windows_portable_devices(registry)
+        process_emd_mgmt(registry)
 
-                if registry.hive_type() == Registry.HiveType.NTUSER and hive_type == Registry.HiveType.NTUSER:
-                    print('Hive name: ' + registry.hive_name())
-                    print('Hive type: ' + registry.hive_type().value)
-                    process_mountpoints2(registry, f)
-
-            except Exception as err:
-                traceback.print_exc(file=sys.stdout)
-                traceback.print_stack()
-                print(err.args)
-                print(err.message)
+    if hive_type == Registry.HiveType.NTUSER:
+        fileobject = filesystemObject.open("/Users/Suspect/NTUSER.DAT")
+        filedata = fileobject.read_random(0,fileobject.info.meta.size)
+        print('Loading file: NTUSER')
+        registry = Registry.Registry(filedata)
+        print('Hive name: ' + registry.hive_name())
+        print('Hive type: ' + registry.hive_type().value)
+        process_mountpoints2(registry, f)
 
 
 def output_data_to_console():
@@ -869,9 +876,8 @@ def process_log_file(file):
     regexVista2 = '>>>\s\sSection\sstart\s([0-9]+/[0-9]+/[0-9]+\s[0-9]+:[0-9]+:[0-9]+\.[0-9]+)'
     regexWin78 = '>>>\s\s\[Device\sInstall\s\(Hardware\sinitiated\) - SWD\\WPDBUSENUM\\_\?\?_USBSTOR#(.*)\]'
 
-    with open(file) as f:
-        lines = f.readlines()
-    f.close()
+    lines = file
+    
 
     install_times = {}
     index = 0
@@ -1105,11 +1111,11 @@ def remove_non_ascii_characters(data):
 
 def main():
     """Parse the command line parameters and load the configuration."""
-    parser = argparse.ArgumentParser(description='Example: usbdeviceforensics --registry "/case/registryhives" ')
+    parser = argparse.ArgumentParser(description='Example: usbdeviceforensics --image "/case/image.001" ')
     parser.add_argument('-o', '--output', help='The output file name')
     parser.add_argument('-f', '--format', choices=['csv', 'text'], help='Output format')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode, which outputs details VERY verbosely')
-    parser.add_argument('-r', '--registry', required=True, help='Path to registry hives')
+    parser.add_argument('-i', '--image', required=True, help='path to image')
     args = parser.parse_args()
 
     if args.debug is True:
@@ -1121,7 +1127,7 @@ def main():
             print("The output file has not been supplied")
             return
 
-    process(args.registry, args.output, args.format)
+    process(args.image, args.output, args.format)
 
 if __name__ == "__main__":
     main()
