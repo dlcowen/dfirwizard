@@ -137,11 +137,16 @@ def extract_file_from_image(filesystemObject, file_path, file_name):
     the name you want to give the file when its written out"""
     
     fileobject = filesystemObject.open(file_path)
-    filedata = fileobject.read_random(0,fileobject.info.meta.size)
-    outfile = open(file_name, 'w')
-    outfile.write(filedata)
-    outfile.close()
-    
+    BUFF_SIZE = 1024 * 1024
+    offset=0
+    extractFile = open(file_name,'wb')
+    while offset < fileobject.info.meta.size:
+        available_to_read = min(BUFF_SIZE, fileobject.info.meta.size - offset)
+        filedata = fileobject.read_random(offset,available_to_read)
+        offset += len(filedata)
+        extractFile.write(filedata)
+    extractFile.close
+        
 def process_system_registry_hive(filesystemObject, hive_type):
     """Generic method used to process a single registry hive type"""
     
@@ -165,7 +170,7 @@ def process_user_registry_hive(filesystemObject, hive_type):
     if hive_type == Registry.HiveType.NTUSER:       
         extract_file_from_image(filesystemObject, "/Users/Suspect/NTUSER.DAT","NTUSER")
         registry = Registry.Registry("NTUSER")
-        process_mountpoints2(registry, f)
+        process_mountpoints2(registry, "NTUSER")
 
 
 def output_data_to_console():
@@ -853,7 +858,7 @@ def process_mountpoints2(registry, reg_file_path):
                     continue
 
                 mp2 = MountPoint2()
-                mp2.file = reg_file_path
+                mp2.file = "NTUSER"
                 mp2.timestamp = sub_key.timestamp()
                 usb_device.mountpoint2.append(mp2)
 
