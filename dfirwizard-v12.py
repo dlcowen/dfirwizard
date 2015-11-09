@@ -69,7 +69,7 @@ def directoryRecurse(directoryObject, parentPath):
             if args.extract == True:
                   if not os.path.exists(outputPath):
                     os.makedirs(outputPath)
-                  extractFile = open(outputPath+entryObject.info.name.name,'w')
+                  extractFile = open(outputPath+entryObject.info.name.name,'wb')
             while offset < entryObject.info.meta.size:
                 available_to_read = min(BUFF_SIZE, entryObject.info.meta.size - offset)
                 filedata = entryObject.read_random(offset,available_to_read)
@@ -152,7 +152,7 @@ args = argparser.parse_args()
 dirPath = args.path
 if not args.search == '.*':
   print "Search Term Provided",args.search 
-outfile = open(args.output,'w')
+outfile = open(args.output,'wb')
 outfile.write('"Inode","Full Path","Creation Time","Size","MD5 Hash","SHA1 Hash"\n')
 wr = csv.writer(outfile, quoting=csv.QUOTE_ALL)
 if (args.imagetype == "e01"):
