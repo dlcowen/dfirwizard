@@ -167,10 +167,48 @@ def process_system_registry_hive(filesystemObject, hive_type):
         process_emd_mgmt(registry)
 
 def process_user_registry_hive(filesystemObject, hive_type):
-    if hive_type == Registry.HiveType.NTUSER:       
-        extract_file_from_image(filesystemObject, "/Users/Suspect/NTUSER.DAT","NTUSER")
-        registry = Registry.Registry("NTUSER")
-        process_mountpoints2(registry, "NTUSER")
+    if hive_type == Registry.HiveType.NTUSER:
+        directoryObject = filesystemObject.open_dir(path="/Users")
+        parentPath="/Users"
+        for entryObject in directoryObject:
+            if entryObject.info.name.name in [".", ".."]:
+              continue
+            #print entryObject.info.name.name
+            try:
+              f_type = entryObject.info.name.type
+              size = entryObject.info.meta.size
+            except Exception as error:
+                print "Cannot retrieve type or size of",entryObject.info.name.name
+                print error.message
+                continue
+              
+            try:
+      
+              filepath = '/%s/%s' % ('/'.join(parentPath),entryObject.info.name.name)
+              outputPath ='./%s/' % ('/'.join(parentPath))
+      
+              if f_type == pytsk3.TSK_FS_NAME_TYPE_DIR:
+                  sub_directory = entryObject.as_directory()
+                  print "Entering Directory: %s" % filepath
+                  #parentPath.append(entryObject.info.name.name)
+                  #directoryRecurse(sub_directory,parentPath)
+                  #parentPath.pop(-1)
+                  print "Leaving Directory: %s" % filepath
+                  extract_file_from_image(filesystemObject, filepath+"NTUSER.DAT" ,filepath+"NTUSER")                   
+              
+      
+              elif f_type == pytsk3.TSK_FS_NAME_TYPE_REG and entryObject.info.meta.size == 0:
+      
+                  continue
+      
+              else:
+                print "This went wrong",entryObject.info.name.name,f_type
+                
+            except IOError as e:
+              print e
+              continue
+              registry = Registry.Registry(filepath+"NTUSER")
+              process_mountpoints2(registry, filepath+"NTUSER")
 
 
 def output_data_to_console():
