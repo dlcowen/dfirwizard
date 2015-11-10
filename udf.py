@@ -169,7 +169,7 @@ def process_system_registry_hive(filesystemObject, hive_type):
 def process_user_registry_hive(filesystemObject, hive_type):
     if hive_type == Registry.HiveType.NTUSER:
         directoryObject = filesystemObject.open_dir(path="/Users")
-        parentPath="/Users"
+        parentPath="/Users/"
         for entryObject in directoryObject:
             if entryObject.info.name.name in [".", ".."]:
               continue
@@ -184,8 +184,8 @@ def process_user_registry_hive(filesystemObject, hive_type):
               
             try:
       
-              filepath = '/%s/%s' % ('/'.join(parentPath),entryObject.info.name.name)
-              outputPath ='./%s/' % ('/'.join(parentPath))
+              filepath = parentPath + entryObject.info.name.name
+              outputPath = parentPath
       
               if f_type == pytsk3.TSK_FS_NAME_TYPE_DIR:
                   sub_directory = entryObject.as_directory()
@@ -194,8 +194,9 @@ def process_user_registry_hive(filesystemObject, hive_type):
                   #directoryRecurse(sub_directory,parentPath)
                   #parentPath.pop(-1)
                   print "Leaving Directory: %s" % filepath
-                  extract_file_from_image(filesystemObject, filepath+"NTUSER.DAT" ,filepath+"NTUSER")                   
-              
+                  extract_file_from_image(filesystemObject, filepath+"/NTUSER.DAT" ,entryObject.info.name.name+"NTUSER")                   
+                  registry = Registry.Registry(entryObject.info.name.name+"NTUSER")
+                  process_mountpoints2(registry, entryObject.info.name.name+"NTUSER", entryObject.info.name.name)              
       
               elif f_type == pytsk3.TSK_FS_NAME_TYPE_REG and entryObject.info.meta.size == 0:
       
@@ -207,8 +208,8 @@ def process_user_registry_hive(filesystemObject, hive_type):
             except IOError as e:
               print e
               continue
-              registry = Registry.Registry(filepath+"NTUSER")
-              process_mountpoints2(registry, filepath+"NTUSER")
+            
+            
 
 
 def output_data_to_console():
@@ -427,6 +428,7 @@ def get_os_version(registry):
     global os_version
     key = registry.open('Microsoft\\Windows NT\\CurrentVersion')
     reg_value = get_reg_value(key, 'CurrentVersion')
+    print reg_value.value()
     if not reg_value is None:
         os_version = reg_value.value()
 
@@ -667,7 +669,8 @@ def process_mounted_devices(registry):
             # Example Data: USBSTOR#Disk&Ven_SanDisk&Prod_Cruzer&Rev_7.01#2444120C4E80D827&
             data = reg_value.value()
             data = remove_non_ascii_characters(data)
-
+            print reg_value.name()
+            
             if '\\DosDevices\\' in reg_value.name():
                 if len(data) == 12:  # Drive Sig (DWORD) Partition Offset (DWORD DWORD)
                     dos_device = bytearray(data[0:4])
@@ -879,7 +882,7 @@ def process_emd_mgmt(registry):
 
 ##### NTUSER Hive Methods ############################################################################################
 
-def process_mountpoints2(registry, reg_file_path):
+def process_mountpoints2(registry, reg_file_path, username):
     """Processes the Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 key"""
     try:
         key = registry.open('Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2')
@@ -896,7 +899,7 @@ def process_mountpoints2(registry, reg_file_path):
                     continue
 
                 mp2 = MountPoint2()
-                mp2.file = "NTUSER"
+                mp2.file = username
                 mp2.timestamp = sub_key.timestamp()
                 usb_device.mountpoint2.append(mp2)
 
