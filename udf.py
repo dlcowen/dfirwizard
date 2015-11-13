@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 import re
 import csv
 import pytsk3
+import json
 
 # Enums #######################################################################
 
@@ -128,6 +129,8 @@ def process(image_path, output, format):
 
     if format == "csv":
         output_data_to_file_csv(output)
+    elif format == "json":
+        output_data_to_file_json(output)
     else:
         output_data_to_file_text(output)
         
@@ -260,6 +263,52 @@ def output_data_to_console():
                 print('\tEMD Timestamp: ' + emd.timestamp.strftime('%Y-%m-%dT%H:%M:%S'))
 
         print('------------------------------------------------------------------------------')
+
+def output_data_to_file_json(output):
+    """Outputs the data to a file in JSON format"""
+    write_debug(data='Method: output_data_to_file_json')
+    f = open(output, "wb")
+    for device in usb_devices:
+        data = []
+        data.append(device.vendor)
+        data.append(device.product)
+        data.append(device.version)
+        data.append(device.serial_number)
+        data.append(device.vid)
+        data.append(device.pid)
+        data.append(device.parent_prefix_id)
+        data.append(device.volume_name)
+        data.append(device.guid)
+        data.append(device.mountpoint)
+        if device.install_datetime != datetime.min:
+            data.append(device.install_datetime.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.usb_stor_datetime != datetime.min:
+            data.append(device.usb_stor_datetime.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.usbstor_datetime64 != datetime.min:
+            data.append(device.usbstor_datetime64.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.usbstor_datetime65 != datetime.min:
+            data.append(device.usbstor_datetime65.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.usbstor_datetime66 != datetime.min:
+            data.append(device.usbstor_datetime66.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.usbstor_datetime67 != datetime.min:
+            data.append(device.usbstor_datetime67.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b != datetime.min:
+            data.append(device.device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.device_classes_datetime_10497b1bba5144e58318a65c837b6661 != datetime.min:
+            data.append(device.device_classes_datetime_10497b1bba5144e58318a65c837b6661.strftime('%Y-%m-%dT%H:%M:%S'))
+        if device.vid_pid_datetime != datetime.min:
+            data.append(device.vid_pid_datetime.strftime('%Y-%m-%dT%H:%M:%S'))
+        for mp in device.mountpoint2:
+                if mp.timestamp != datetime.min:
+                    data.append(mp.timestamp.strftime('%Y-%m-%dT%H:%M:%S'))
+                data.append(mp.file)
+        for em in device.emdmgmt:
+            if em.timestamp != datetime.min:
+                data.append(em.timestamp.strftime('%Y-%m-%dT%H:%M:%S'))
+            data.append(em.volume_serial_num)
+            data.append(em.volume_serial_num_hex)
+            data.append(em.volume_name)
+        f.write(json.dumps(data,indent=4))
 
 
 def output_data_to_file_csv(output):
@@ -1164,7 +1213,7 @@ def main():
     """Parse the command line parameters and load the configuration."""
     parser = argparse.ArgumentParser(description='Example: usbdeviceforensics --image "/path/to/image.001" ')
     parser.add_argument('-o', '--output', help='The output file name')
-    parser.add_argument('-f', '--format', choices=['csv', 'text'], help='Output format')
+    parser.add_argument('-f', '--format', choices=['csv', 'text', 'json'], help='Output format')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode, which outputs details VERY verbosely')
     parser.add_argument('-i', '--image', required=True, help='path to image')
     args = parser.parse_args()
