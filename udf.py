@@ -268,47 +268,52 @@ def output_data_to_file_json(output):
     """Outputs the data to a file in JSON format"""
     write_debug(data='Method: output_data_to_file_json')
     f = open(output, "wb")
+    data = {}
+    counter =0
     for device in usb_devices:
-        data = {}
-        data["vendor"] = device.vendor
-        data["product"] = device.product
-        data["version"] = device.version
-        data["serial_number"] = device.serial_number
-        data["vid"] = device.vid
-        data["pid"] = device.pid
-        data["parent_prefix_id"] = device.parent_prefix_id
-        data["volume_name"] = device.volume_name
-        data["guid"] = device.guid
-        data["mountpoint"] = device.mountpoint
+        print counter
+        data[counter] = {}
+        data[counter]["vendor"] = device.vendor
+        data[counter]["product"] = device.product
+        data[counter]["version"] = device.version
+        data[counter]["serial_number"] = device.serial_number
+        data[counter]["vid"] = device.vid
+        data[counter]["pid"] = device.pid
+        data[counter]["parent_prefix_id"] = device.parent_prefix_id
+        data[counter]["volume_name"] = device.volume_name
+        data[counter]["guid"] = device.guid
+        data[counter]["mountpoint"] = device.mountpoint
         if device.install_datetime != datetime.min:
-            data["install_datetime"] = device.install_datetime.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["install_datetime"] = device.install_datetime.strftime('%Y-%m-%dT%H:%M:%S')
         if device.usb_stor_datetime != datetime.min:
-            data["usb_stor_datetime"] = device.usb_stor_datetime.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["usb_stor_datetime"] = device.usb_stor_datetime.strftime('%Y-%m-%dT%H:%M:%S')
         if device.usbstor_datetime64 != datetime.min:
-            data["usbstor_datetime64"] = device.usbstor_datetime64.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["usbstor_datetime64"] = device.usbstor_datetime64.strftime('%Y-%m-%dT%H:%M:%S')
         if device.usbstor_datetime65 != datetime.min:
-            data["usbstor_datetime65"] = device.usbstor_datetime65.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["usbstor_datetime65"] = device.usbstor_datetime65.strftime('%Y-%m-%dT%H:%M:%S')
         if device.usbstor_datetime66 != datetime.min:
-            data["usbstor_datetime66"] = device.usbstor_datetime66.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["usbstor_datetime66"] = device.usbstor_datetime66.strftime('%Y-%m-%dT%H:%M:%S')
         if device.usbstor_datetime67 != datetime.min:
-            data["usbstor_datetime67"] = device.usbstor_datetime67.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["usbstor_datetime67"] = device.usbstor_datetime67.strftime('%Y-%m-%dT%H:%M:%S')
         if device.device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b != datetime.min:
-            data["device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b"] = device.device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b"] = device.device_classes_datetime_53f56307b6bf11d094f200a0c91efb8b.strftime('%Y-%m-%dT%H:%M:%S')
         if device.device_classes_datetime_10497b1bba5144e58318a65c837b6661 != datetime.min:
-            data["device_classes_datetime_10497b1bba5144e58318a65c837b6661"] = device.device_classes_datetime_10497b1bba5144e58318a65c837b6661.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["device_classes_datetime_10497b1bba5144e58318a65c837b6661"] = device.device_classes_datetime_10497b1bba5144e58318a65c837b6661.strftime('%Y-%m-%dT%H:%M:%S')
         if device.vid_pid_datetime != datetime.min:
-            data["vid_pid_datetime"] = device.vid_pid_datetime.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["vid_pid_datetime"] = device.vid_pid_datetime.strftime('%Y-%m-%dT%H:%M:%S')
         for mp in device.mountpoint2:
                 if mp.timestamp != datetime.min:
-                    data["mp_timestamp"] = mp.timestamp.strftime('%Y-%m-%dT%H:%M:%S')
-                data["mp_file"] = mp.file
+                    data[counter]["mp_timestamp"] = mp.timestamp.strftime('%Y-%m-%dT%H:%M:%S')
+                data[counter]["mp_file"] = mp.file
         for em in device.emdmgmt:
             if em.timestamp != datetime.min:
-                data["em_timestamp"] = em.timestamp.strftime('%Y-%m-%dT%H:%M:%S')
-            data["volume_serial_number"] = em.volume_serial_num
-            data["volume_serial_number_hex"] = em.volume_serial_num_hex
-            data["volume_name"] = em.volume_name
-        f.write(json.dumps(data,indent=4))
+                print counter, "timestamp", em.timestamp.strftime('%Y-%m-%dT%H:%M:%S')
+                data[counter]["em_timestamp"] = em.timestamp.strftime('%Y-%m-%dT%H:%M:%S')
+            data[counter]["volume_serial_number"] = em.volume_serial_num
+            data[counter]["volume_serial_number_hex"] = em.volume_serial_num_hex
+            data[counter]["volume_name"] = em.volume_name
+        counter += 1
+    f.write(json.dumps(data,indent=4))
 
 
 def output_data_to_file_csv(output):
