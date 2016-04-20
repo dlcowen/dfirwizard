@@ -8,7 +8,7 @@ from dfvfs.volume import tsk_volume_system
 from dfvfs.resolver import resolver
 from dfvfs.lib import raw
 
-source_path="image.e01"
+source_path="Windows 7 Professional SP1 x86 Suspect.vhd"
 
 path_spec = path_spec_factory.Factory.NewPathSpec(
           definitions.TYPE_INDICATOR_OS, location=source_path)
